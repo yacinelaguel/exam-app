@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from groq import Groq
 import time
 import io
 import zipfile
@@ -256,11 +256,8 @@ if "results" not in st.session_state:
 #  GEMINI SETUP
 # ─────────────────────────────────────────────
 try:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-    model = genai.GenerativeModel("gemini-2.0-flash")
-except Exception:
-    st.error("⚠️  تعذّر الاتصال بـ Gemini API. تأكد من ضبط GEMINI_API_KEY في ملف secrets.toml")
-    st.stop()
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+
 
 # ─────────────────────────────────────────────
 #  SIDEBAR
@@ -477,8 +474,12 @@ if generate:
 
         try:
             prompt   = build_prompt(level, trimester, subject, lessons)
-            response = model.generate_content(prompt)
-            raw      = response.text
+response = client.chat.completions.create(
+    model="llama-3.3-70b-versatile",
+    messages=[{"role": "user", "content": prompt}],
+    max_tokens=4000,
+)
+raw = response.choices[0].message.content
         except Exception as e:
             st.error(f"حدث خطأ أثناء الاتصال بـ Gemini: {e}")
             st.stop()
